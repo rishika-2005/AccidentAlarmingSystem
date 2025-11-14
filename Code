@@ -1,0 +1,70 @@
+//Code
+// 🚗 Accident Alarming System using Arduino and GSM Module
+// Components: Arduino UNO, Vibration Sensor, GPS Module, GSM Module, Buzzer, LED
+
+#include <SoftwareSerial.h>
+SoftwareSerial gsm(9, 10); // RX, TX for GSM module
+SoftwareSerial gps(4, 3);  // RX, TX for GPS module
+
+const int vibrationSensor = 7;
+const int buzzer = 8;
+const int led = 13;
+
+String latitude = "";
+String longitude = "";
+bool accidentDetected = false;
+
+void setup() {
+  pinMode(vibrationSensor, INPUT);
+  pinMode(buzzer, OUTPUT);
+  pinMode(led, OUTPUT);
+
+  Serial.begin(9600);
+  gsm.begin(9600);
+  gps.begin(9600);
+
+  Serial.println("Accident Alarming System Initialized...");
+  delay(2000);
+}
+
+void loop() {
+  int sensorValue = digitalRead(vibrationSensor);
+  
+  if (sensorValue == HIGH && !accidentDetected) {
+    Serial.println("⚠ Accident detected!");
+    digitalWrite(buzzer, HIGH);
+    digitalWrite(led, HIGH);
+    delay(1000);
+    digitalWrite(buzzer, LOW);
+    digitalWrite(led, LOW);
+
+    accidentDetected = true;
+    getGPSLocation();
+    sendAlertMessage();
+  }
+
+  delay(500);
+}
+
+void getGPSLocation() {
+  // Dummy coordinates if GPS not available
+  latitude = "17.3850";
+  longitude = "78.4867";
+  Serial.println("Fetching GPS coordinates...");
+  delay(2000);
+  Serial.println("Latitude: " + latitude);
+  Serial.println("Longitude: " + longitude);
+}
+
+void sendAlertMessage() {
+  String message = "Accident detected! Location: https://maps.google.com/?q=" + latitude + "," + longitude;
+  
+  gsm.println("AT+CMGF=1");
+  delay(1000);
+  gsm.println("AT+CMGS=\"+919xxxxxxxxx\""); // Replace with your emergency number
+  delay(1000);
+  gsm.println(message);
+  delay(100);
+  gsm.write(26); // End SMS
+  Serial.println("📩 Alert sent successfully!");
+}
